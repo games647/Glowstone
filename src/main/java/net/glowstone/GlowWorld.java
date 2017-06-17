@@ -11,7 +11,6 @@ import net.glowstone.chunk.ChunkManager;
 import net.glowstone.chunk.ChunkManager.ChunkLock;
 import net.glowstone.chunk.ChunkSection;
 import net.glowstone.chunk.GlowChunk;
-import net.glowstone.chunk.GlowChunk.Key;
 import net.glowstone.chunk.GlowChunkSnapshot.EmptySnapshot;
 import net.glowstone.constants.*;
 import net.glowstone.data.CommandFunction;
@@ -251,7 +250,7 @@ public final class GlowWorld implements World {
      */
     private int maxBuildHeight;
 
-    private Set<Key> activeChunksSet = new HashSet<>();
+    private Set<Long> activeChunksSet = new HashSet<>();
     /**
      * The ScheduledExecutorService the for entity AI tasks threading.
      */
@@ -420,7 +419,7 @@ public final class GlowWorld implements World {
             for (int x = cx - radius; x <= cx + radius; x++) {
                 for (int z = cz - radius; z <= cz + radius; z++) {
                     if (isChunkLoaded(cx, cz)) {
-                        activeChunksSet.add(new Key(x, z));
+                        activeChunksSet.add(GlowChunk.getKeyFromXZ(x, z));
                     }
                 }
             }
@@ -428,9 +427,9 @@ public final class GlowWorld implements World {
     }
 
     private void updateBlocksInActiveChunks() {
-        for (Key key : activeChunksSet) {
-            int cx = key.getX();
-            int cz = key.getZ();
+        for (Long key : activeChunksSet) {
+            int cx = GlowChunk.getXFromKey(key);
+            int cz = GlowChunk.getZFromKey(key);
             // check the chunk is loaded
             if (isChunkLoaded(cx, cz)) {
                 GlowChunk chunk = getChunkAt(cx, cz);
@@ -808,7 +807,7 @@ public final class GlowWorld implements World {
                 } else {
                     loadChunk(x, z);
                 }
-                spawnChunkLock.acquire(new Key(x, z));
+                spawnChunkLock.acquire(GlowChunk.getKeyFromXZ(x, z));
                 if (System.currentTimeMillis() >= loadTime + 1000) {
                     int progress = 100 * current / total;
                     GlowServer.logger.info("Preparing spawn for " + name + ": " + progress + "%");
@@ -1252,7 +1251,7 @@ public final class GlowWorld implements World {
             return false;
         }
 
-        Key key = new Key(x, z);
+        Long key = GlowChunk.getKeyFromXZ(x, z);
         boolean result = false;
 
         for (GlowPlayer player : getRawPlayers()) {

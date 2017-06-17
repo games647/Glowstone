@@ -2,7 +2,6 @@ package net.glowstone.chunk;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import lombok.Data;
 import net.glowstone.EventFactory;
 import net.glowstone.GlowServer;
 import net.glowstone.GlowWorld;
@@ -51,6 +50,7 @@ public final class GlowChunk implements Chunk {
      * The coordinates of this chunk.
      */
     private final int x, z;
+    private final long key;
     /**
      * The block entities that reside in this chunk.
      */
@@ -91,6 +91,7 @@ public final class GlowChunk implements Chunk {
         this.world = world;
         this.x = x;
         this.z = z;
+        this.key = getKeyFromXZ(x, z);
     }
 
     @Override
@@ -113,6 +114,10 @@ public final class GlowChunk implements Chunk {
     @Override
     public int getZ() {
         return z;
+    }
+
+    public long getKey() {
+        return key;
     }
 
     @Override
@@ -282,7 +287,7 @@ public final class GlowChunk implements Chunk {
      * @param cy   the Y coordinate of the BlockEntity
      * @param cz   the Z coordinate of the BlockEntity
      * @param type the type of BlockEntity
-     * @return     The BlockEntity that was created.
+     * @return The BlockEntity that was created.
      */
     public BlockEntity createEntity(int cx, int cy, int cz, int type) {
         Material material = Material.getMaterial(type);
@@ -694,7 +699,7 @@ public final class GlowChunk implements Chunk {
      * Creates a new {@link ChunkDataMessage} which can be sent to a client to stream
      * parts of this chunk to them.
      *
-     * @param skylight Whether to include skylight data.
+     * @param skylight    Whether to include skylight data.
      * @param entireChunk Whether to send all chunk sections.
      * @return The {@link ChunkDataMessage}.
      */
@@ -746,16 +751,16 @@ public final class GlowChunk implements Chunk {
         return new ChunkDataMessage(x, z, entireChunk, sectionBitmask, buf, blockEntities.toArray(new CompoundTag[blockEntities.size()]));
     }
 
-    /**
-     * A chunk key represents the X and Z coordinates of a chunk in a manner
-     * suitable for use as a key in a hash table or set.
-     */
-    @Data
-    public static final class Key {
-        /**
-         * The coordinates.
-         */
-        private final int x, z;
+    public static long getKeyFromXZ(int x, int z) {
+        return (((long) x) << 32) | (z & 0xffffffffL);
+    }
+
+    public static int getXFromKey(long key) {
+        return (int) (key >> 32);
+    }
+
+    public static int getZFromKey(long key) {
+        return (int) key;
     }
 
 }
